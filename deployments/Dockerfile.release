@@ -1,0 +1,8 @@
+FROM golang:alpine AS builder
+WORKDIR /app
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux go build -o mortgage_calculator ./cmd/mortgage_calculator
+
+FROM scratch
+COPY --from=builder /app/mortgage_calculator /
+CMD ["/mortgage_calculator"]
