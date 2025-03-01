@@ -1,7 +1,10 @@
+// Package main
 package main
 
-import "fmt"
+import (
+	"log"
+)
 
 func main() {
-	fmt.Println("mortgage_calculator")
+	log.Println("mortgage_calculator")
 }
