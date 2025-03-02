@@ -9,6 +9,7 @@ import (
 	"sbermortgagecalculator/internal/routes"
 	"sbermortgagecalculator/internal/utils"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
 
@@ -27,9 +28,15 @@ func main() {
 
 	routes.SetupRoutes(r)
 
+	corsMiddleware := handlers.CORS(
+		handlers.AllowedOrigins([]string{"*"}),
+		handlers.AllowedMethods([]string{"GET", "POST", "OPTIONS"}),
+		handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),
+	)
+
 	address := fmt.Sprintf(":%d", config.Port)
 	fmt.Printf("The server is running on the port %s\n", address)
-	if err := http.ListenAndServe(address, r); err != nil {
+	if err := http.ListenAndServe(address, corsMiddleware(r)); err != nil {
 		log.Fatalf("Server startup error: %v", err)
 	}
 }
