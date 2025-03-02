@@ -1,0 +1,84 @@
+openapi: 3.0.0
+info:
+  title: Ипотечный калькулятор API
+  description: API для расчета параметров ипотеки
+  version: 1.0.0
+
+paths:
+  /execute:
+    post:
+      summary: Расчет ипотеки
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                object_cost:
+                  type: integer
+                initial_payment:
+                  type: integer
+                months:
+                  type: integer
+                program:
+                  type: object
+                  properties:
+                    salary:
+                      type: boolean
+                    military:
+                      type: boolean
+                    base:
+                      type: boolean
+      responses:
+        '200':
+          description: Успешный расчет
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      params:
+                        type: object
+                        properties:
+                          object_cost:
+                            type: integer
+                          initial_payment:
+                            type: integer
+                          months:
+                            type: integer
+                      program:
+                        type: object
+                      aggregates:
+                        type: object
+                        properties:
+                          rate:
+                            type: integer
+                          loan_sum:
+                            type: integer
+                          monthly_payment:
+                            type: integer
+                          overpayment:
+                            type: integer
+                          last_payment_date:
+                            type: string
+        '400':
+          description: Ошибка в запросе
+
+  /cache:
+    get:
+      summary: Получение расчетов из кэша
+      responses:
+        '200':
+          description: Успешное получение кэша
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        '400':
+          description: Кэш пустой
