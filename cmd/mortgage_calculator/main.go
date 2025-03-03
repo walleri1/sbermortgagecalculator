@@ -6,11 +6,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"sbermortgagecalculator/internal/routes"
-	"sbermortgagecalculator/internal/utils"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+
+	"sbermortgagecalculator/internal/middleware"
+	"sbermortgagecalculator/internal/routes"
+	"sbermortgagecalculator/internal/utils"
 )
 
 func main() {
@@ -25,6 +27,8 @@ func main() {
 	}
 
 	r := mux.NewRouter()
+
+	r.Use(middleware.LoggingMiddleware)
 
 	routes.SetupRoutes(r)
 
