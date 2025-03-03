@@ -9,7 +9,7 @@ import (
 	"sbermortgagecalculator/internal/models"
 )
 
-func TestCalculate(t *testing.T) {
+func TestCalculateMortgageAggregates(t *testing.T) {
 	tests := []struct {
 		name            string
 		request         models.LoanRequest
@@ -28,9 +28,9 @@ func TestCalculate(t *testing.T) {
 				},
 				Program: models.Program{Salary: true},
 			},
-			expectedRate:    8,
+			expectedRate:    CorporateRate,
 			expectedLoan:    4000000,
-			expectedPayment: 33458, // примерный платеж
+			expectedPayment: 33457,
 			expectErr:       nil,
 		},
 		{
@@ -43,29 +43,89 @@ func TestCalculate(t *testing.T) {
 				},
 				Program: models.Program{Military: true},
 			},
-			expectedRate:    9,
+			expectedRate:    MilitaryRate,
 			expectedLoan:    2400000,
-			expectedPayment: 24933, // примерный платеж
+			expectedPayment: 24342,
 			expectErr:       nil,
 		},
 		{
-			name: "Invalid program selection",
+			name: "Valid base program",
+			request: models.LoanRequest{
+				Params: models.LoanParams{
+					ObjectCost:     3000000,
+					InitialPayment: 600000,
+					Months:         180,
+				},
+				Program: models.Program{Base: true},
+			},
+			expectedRate:    BaseRate,
+			expectedLoan:    2400000,
+			expectedPayment: 25790,
+			expectErr:       nil,
+		},
+		{
+			name: "Invalid no program selection",
 			request: models.LoanRequest{
 				Params: models.LoanParams{
 					ObjectCost:     5000000,
 					InitialPayment: 1000000,
 					Months:         240,
 				},
-				Program: models.Program{}, // не выбрана программа
+				Program: models.Program{},
 			},
 			expectErr: ErrNoProgramSelected,
+		},
+		{
+			name: "Invalid two program selection: salary, base",
+			request: models.LoanRequest{
+				Params: models.LoanParams{
+					ObjectCost:     5000000,
+					InitialPayment: 1000000,
+					Months:         240,
+				},
+				Program: models.Program{
+					Salary: true,
+					Base:   true,
+				},
+			},
+			expectErr: ErrMultiplePrograms,
+		},
+		{
+			name: "Invalid two program selection: salary, military",
+			request: models.LoanRequest{
+				Params: models.LoanParams{
+					ObjectCost:     5000000,
+					InitialPayment: 1000000,
+					Months:         240,
+				},
+				Program: models.Program{
+					Salary:   true,
+					Military: true,
+				},
+			},
+			expectErr: ErrMultiplePrograms,
+		},
+		{
+			name: "Invalid two program selection: base, military",
+			request: models.LoanRequest{
+				Params: models.LoanParams{
+					ObjectCost:     5000000,
+					InitialPayment: 1000000,
+					Months:         240,
+				},
+				Program: models.Program{
+					Base:     true,
+					Military: true,
+				},
+			},
+			expectErr: ErrMultiplePrograms,
 		},
 		{
 			name: "Low initial payment",
 			request: models.LoanRequest{
 				Params: models.LoanParams{
 					ObjectCost:     6000000,
-					InitialPayment: 500000, // меньше 20% от стоимости дома
+					InitialPayment: 500000,
 					Months:         240,
 				},
 				Program: models.Program{Salary: true},
@@ -73,12 +133,24 @@ func TestCalculate(t *testing.T) {
 			expectErr: ErrInitialPaymentTooLow,
 		},
 		{
+			name: "Lack of loan amount",
+			request: models.LoanRequest{
+				Params: models.LoanParams{
+					ObjectCost:     6000000,
+					InitialPayment: 6000000,
+					Months:         240,
+				},
+				Program: models.Program{Salary: true},
+			},
+			expectErr: ErrLoanSumZeroOrNegative,
+		},
+		{
 			name: "Zero Months",
 			request: models.LoanRequest{
 				Params: models.LoanParams{
 					ObjectCost:     4000000,
 					InitialPayment: 800000,
-					Months:         0, // количество месяцев равно 0
+					Months:         0,
 				},
 				Program: models.Program{Base: true},
 			},
@@ -88,7 +160,7 @@ func TestCalculate(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			result, err := Calculate(tc.request)
+			result, err := CalculateMortgageAggregates(tc.request)
 			if tc.expectErr != nil {
 				assert.ErrorIs(t, err, tc.expectErr)
 				return
@@ -104,60 +176,78 @@ func TestCalculate(t *testing.T) {
 
 func TestCalculateMonthlyPayment(t *testing.T) {
 	tests := []struct {
-		name            string
-		loanSum         decimal.Decimal
-		monthlyRate     decimal.Decimal
-		months          decimal.Decimal
-		expectedPayment decimal.Decimal
-		expectErr       error
+		name           string
+		loanSum        decimal.Decimal
+		monthlyRate    decimal.Decimal
+		months         decimal.Decimal
+		expectedResult decimal.Decimal
+		expectErr      error
 	}{
 		{
-			name:            "Standard case",
-			loanSum:         decimal.NewFromInt(4000000),
-			monthlyRate:     decimal.NewFromFloat(0.006666), // 8% annually
-			months:          decimal.NewFromInt(240),
-			expectedPayment: decimal.NewFromInt(33458),
-			expectErr:       nil,
+			name:           "Standard case with 8% annual interest rate",
+			loanSum:        decimal.NewFromInt(4000000),
+			monthlyRate:    decimal.NewFromInt32(CorporateRate).Div(decimal.NewFromInt(100)).Div(decimal.NewFromInt(12)),
+			months:         decimal.NewFromInt(20).Mul(decimal.NewFromInt(12)),
+			expectedResult: decimal.RequireFromString("33457.6"),
+			expectErr:      nil,
 		},
 		{
-			name:            "Zero interest rate",
-			loanSum:         decimal.NewFromInt(4000000),
-			monthlyRate:     decimal.Zero, // No interest rate
-			months:          decimal.NewFromInt(240),
-			expectedPayment: decimal.NewFromInt(16666),
-			expectErr:       nil,
+			name:           "Zero interest rate",
+			loanSum:        decimal.NewFromInt(4000000),
+			monthlyRate:    decimal.Zero,
+			months:         decimal.NewFromInt(20).Mul(decimal.NewFromInt(12)),
+			expectedResult: decimal.NewFromFloat(16666.66).Round(2),
+			expectErr:      nil,
 		},
 		{
-			name:            "Zero months",
-			loanSum:         decimal.NewFromInt(4000000),
-			monthlyRate:     decimal.NewFromFloat(0.006666),
-			months:          decimal.Zero, // Invalid months
-			expectedPayment: decimal.Zero,
-			expectErr:       ErrCalculationError,
+			name:           "1 month loan with 12% annual interest rate",
+			loanSum:        decimal.NewFromInt(1000000),
+			monthlyRate:    decimal.NewFromFloat(0.01),
+			months:         decimal.NewFromInt(1),
+			expectedResult: decimal.RequireFromString("1010000.00"),
+			expectErr:      nil,
+		},
+		{
+			name:           "Zero months (invalid input)",
+			loanSum:        decimal.NewFromInt(4000000),
+			monthlyRate:    decimal.NewFromInt32(CorporateRate).Div(decimal.NewFromInt(100)).Div(decimal.NewFromInt(12)),
+			months:         decimal.Zero,
+			expectedResult: decimal.Zero,
+			expectErr:      ErrCalculationError,
+		},
+		{
+			name:           "Edge case with 0% and 0 months",
+			loanSum:        decimal.NewFromInt(4000000),
+			monthlyRate:    decimal.Zero,
+			months:         decimal.NewFromInt(0),
+			expectedResult: decimal.Zero,
+			expectErr:      ErrCalculationError,
+		},
+		{
+			name:           "Negative loan amount",
+			loanSum:        decimal.NewFromInt(-1000000),
+			monthlyRate:    decimal.NewFromInt(1).Div(decimal.NewFromInt(100)).Div(decimal.NewFromInt(12)),
+			months:         decimal.NewFromInt(12),
+			expectedResult: decimal.Zero,
+			expectErr:      ErrCalculationError,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			payment, err := CalculateMonthlyPayment(tc.loanSum, tc.monthlyRate, tc.months)
+			result, err := calculateMonthlyPayment(tc.loanSum, tc.monthlyRate, tc.months)
 
 			if tc.expectErr != nil {
-				assert.ErrorIs(t, err, tc.expectErr)
+				assert.ErrorIs(t, err, tc.expectErr, "Expected error did not occur")
 				return
 			}
 
-			// Проверяем отсутствие ошибок
-			assert.NoError(t, err)
+			assert.NoError(t, err, "Unexpected error occurred")
 
-			// Преобразование в float64
-			expectedPaymentFloat, ok1 := tc.expectedPayment.Float64()
-			assert.True(t, ok1, "Expected payment conversion to float64 failed")
-
-			paymentFloat, ok2 := payment.Float64()
-			assert.True(t, ok2, "Payment conversion to float64 failed")
-
-			// Сравнение с допустимой погрешностью
-			assert.InEpsilon(t, expectedPaymentFloat, paymentFloat, 0.01, "Expected %f, got %f", expectedPaymentFloat, paymentFloat)
+			delta := decimal.NewFromFloat(0.01)
+			diff := result.Sub(tc.expectedResult).Abs()
+			assert.True(t, diff.LessThanOrEqual(delta),
+				"Expected result: %s, got: %s (diff: %s)", tc.expectedResult.String(), result.String(), diff.String())
 		})
 	}
 }
