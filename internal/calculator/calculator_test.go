@@ -6,7 +6,6 @@ import (
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 
-	"sbermortgagecalculator/internal/calculator"
 	"sbermortgagecalculator/internal/models"
 )
 
@@ -59,7 +58,7 @@ func TestCalculate(t *testing.T) {
 				},
 				Program: models.Program{}, // не выбрана программа
 			},
-			expectErr: calculator.ErrNoProgramSelected,
+			expectErr: ErrNoProgramSelected,
 		},
 		{
 			name: "Low initial payment",
@@ -71,7 +70,7 @@ func TestCalculate(t *testing.T) {
 				},
 				Program: models.Program{Salary: true},
 			},
-			expectErr: calculator.ErrInitialPaymentTooLow,
+			expectErr: ErrInitialPaymentTooLow,
 		},
 		{
 			name: "Zero Months",
@@ -83,13 +82,13 @@ func TestCalculate(t *testing.T) {
 				},
 				Program: models.Program{Base: true},
 			},
-			expectErr: calculator.ErrMonthsShouldBePositive,
+			expectErr: ErrMonthsShouldBePositive,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			result, err := calculator.Calculate(tc.request)
+			result, err := Calculate(tc.request)
 			if tc.expectErr != nil {
 				assert.ErrorIs(t, err, tc.expectErr)
 				return
@@ -134,13 +133,13 @@ func TestCalculateMonthlyPayment(t *testing.T) {
 			monthlyRate:     decimal.NewFromFloat(0.006666),
 			months:          decimal.Zero, // Invalid months
 			expectedPayment: decimal.Zero,
-			expectErr:       calculator.ErrCalculationError,
+			expectErr:       ErrCalculationError,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			payment, err := calculator.CalculateMonthlyPayment(tc.loanSum, tc.monthlyRate, tc.months)
+			payment, err := CalculateMonthlyPayment(tc.loanSum, tc.monthlyRate, tc.months)
 
 			if tc.expectErr != nil {
 				assert.ErrorIs(t, err, tc.expectErr)
