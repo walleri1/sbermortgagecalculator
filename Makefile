@@ -1,13 +1,27 @@
-all: releases
+IMAGE_NAME = sbermortgagecalculator
+TAG = $(shell date +%Y%m%d)
 
-release:
-	docker build -f deployments/Dockerfile.release -t test .
+lint:
+	golangci-lint run ./...
 
-run: clean
-	docker-compose up -d
+image: clean
+	docker build -f deployments/Dockerfile.release -t $(IMAGE_NAME):$(TAG) .
+	docker tag $(IMAGE_NAME):$(TAG) $(IMAGE_NAME):latest
 
-stop:
+dev: clean image
+	docker-compose up --build -d
+
+stop_dev:
 	docker-compose down
 
+run: image
+	docker run --rm $(IMAGE_NAME):latest
+
+vendor:
+	docker run --rm -v "$(shell pwd):/app" golang:alpine sh -c "cd /app; go mod tidy; go mod vendor"
+
+test: vendor
+	docker run --rm -v "$(shell pwd):/app" golang:alpine sh -c "go install github.com/mfridman/tparse@latest; cd /app; go test -v -cover ./... -json | tparse -all"
+
 clean:
-	docker system prune & docker builder prune & docker image prune -a
+	docker rmi $(IMAGE_NAME):$(TAG) $(IMAGE_NAME):latest $(docker images -f "dangling=true" -q) || true
