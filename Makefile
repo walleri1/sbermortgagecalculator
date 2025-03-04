@@ -18,15 +18,15 @@ stop_dev:
 run: image
 	docker run --rm $(IMAGE_NAME):latest
 
-vendor:
-	docker run --rm -v "$(shell pwd):/app" golang:alpine sh -c "cd /app; go mod tidy; go mod vendor"
+deps:
+	docker run --rm -v "$(shell pwd):/app" golang:alpine sh -c "cd /app; go mod vendor"
 
 image_testing:
 	@if [ -z "$$(docker images -q $(TESTING_IMAGE))" ]; then \
 		docker build -f deployments/Dockerfile.testing -t $(TESTING_IMAGE) .; \
 	fi
 
-test: vendor image_testing
+test: image_testing
 	docker run --rm -v "$(shell pwd):/app" $(TESTING_IMAGE) sh -c "cd /app; go test -v -cover ./... -json | tparse -all"
 
 clean:
