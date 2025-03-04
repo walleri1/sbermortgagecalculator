@@ -19,6 +19,9 @@ image: clean
 dev: clean image
 	docker-compose up --build -d
 
+logs:
+	docker logs -f calculator
+
 stop_dev:
 	docker-compose down
 
