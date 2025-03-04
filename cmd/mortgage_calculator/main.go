@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -40,7 +41,14 @@ func main() {
 
 	address := fmt.Sprintf(":%d", config.Port)
 	fmt.Printf("The server is running on the port %s\n", address)
-	if err := http.ListenAndServe(address, corsMiddleware(r)); err != nil {
+	srv := &http.Server{
+		Addr:         address,
+		Handler:      corsMiddleware(r),
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  20 * time.Second,
+	}
+	if err := srv.ListenAndServe(); err != nil {
 		log.Fatalf("Server startup error: %v", err)
 	}
 }

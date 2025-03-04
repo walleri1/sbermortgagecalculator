@@ -1,4 +1,4 @@
-// Package middleware ...
+// Package middleware implements the logic of measuring the execution time of service requests
 package middleware
 
 import (

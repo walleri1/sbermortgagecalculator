@@ -3,9 +3,9 @@ package models
 
 // LoanParams stores the user's request parameters
 type LoanParams struct {
-	ObjectCost     int `json:"object_cost"`     // Cost object
-	InitialPayment int `json:"initial_payment"` // Initial payment
-	Months         int `json:"months"`          // Loan term in months
+	ObjectCost     int64 `json:"object_cost"`     // Cost object
+	InitialPayment int64 `json:"initial_payment"` // Initial payment
+	Months         int16 `json:"months"`          // Loan term in months
 }
 
 // Program describes the selected loan program
@@ -17,10 +17,10 @@ type Program struct {
 
 // Aggregates describes the results of loan calculations
 type Aggregates struct {
-	Rate            int    `json:"rate"`              // Annual interest rate
-	LoanSum         int    `json:"loan_sum"`          // Credit amount
-	MonthlyPayment  int    `json:"monthly_payment"`   // Monthly payment
-	Overpayment     int    `json:"overpayment"`       // Overpayment for the entire period
+	LoanSum         int64  `json:"loan_sum"`          // Credit amount
+	Overpayment     int64  `json:"overpayment"`       // Overpayment for the entire period
+	MonthlyPayment  int32  `json:"monthly_payment"`   // Monthly payment
+	Rate            int8   `json:"rate"`              // Annual interest rate
 	LastPaymentDate string `json:"last_payment_date"` // Last payment date
 }
 
@@ -44,6 +44,6 @@ type LoanResponse struct {
 
 // CachedLoan is a structure for storing data in a cache
 type CachedLoan struct {
-	ID     int               `json:"id"`
+	ID     int64             `json:"id"`
 	Result CalculationResult `json:"result"`
 }
