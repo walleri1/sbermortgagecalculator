@@ -10,7 +10,6 @@ image_lint:
 
 lint: image_lint
 	docker run --rm -v "$(shell pwd):/app" $(LINT_IMAGE) sh -c "cd /app; golangci-lint run ./..."
-	golangci-lint run ./...
 
 image: clean
 	docker build -f deployments/Dockerfile.release -t $(IMAGE_NAME):$(TAG) .

@@ -5,5 +5,5 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o mortgage_calculator ./cmd/mortgage_calc
 
 FROM scratch
 COPY --from=builder /app/mortgage_calculator /
-COPY --from=builder /app/config/config.yml /config.yml
+COPY ./config/config.yml /config.yml
 ENTRYPOINT ["/mortgage_calculator", "-config=/config.yml"]
