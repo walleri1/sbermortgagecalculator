@@ -1,8 +1,15 @@
 IMAGE_NAME = sbermortgagecalculator
 TAG = $(shell date +%Y%m%d)
 TESTING_IMAGE = tparse
+LINT_IMAGE = golangci-lint
 
-lint:
+image_lint:
+	@if [ -z "$$(docker images -q $(LINT_IMAGE))" ]; then \
+		docker build -f deployments/Dockerfile.lint -t $(LINT_IMAGE) .; \
+	fi
+
+lint: image_lint
+	docker run --rm -v "$(shell pwd):/app" $(LINT_IMAGE) sh -c "cd /app; golangci-lint run ./..."
 	golangci-lint run ./...
 
 image: clean

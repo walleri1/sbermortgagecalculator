@@ -1,0 +1,3 @@
+linters-settings:
+  ginkgolinter:
+    forbid-focus-container: true
