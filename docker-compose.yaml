@@ -3,9 +3,7 @@ version: '3.8'
 services:
   calculator:
     container_name: calculator
-    build:
-      dockerfile: ./deployments/Dockerfile.release
-      context: .
+    image: sbermortgagecalculator:latest
     ports:
       - "8080:8080"
     restart: unless-stopped

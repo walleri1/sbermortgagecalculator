@@ -1,4 +1,4 @@
-// The utils package provides utilities for reading application configurations and other additional features.
+// Package utils provides utilities for reading application configurations and other additional features.
 package utils
 
 import (

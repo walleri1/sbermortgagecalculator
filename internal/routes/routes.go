@@ -1,4 +1,4 @@
-// The routes package implements all service paths
+// Package routes implements all service paths
 package routes
 
 import (

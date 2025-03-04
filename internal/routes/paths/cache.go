@@ -4,6 +4,7 @@ package paths
 import (
 	"encoding/json"
 	"net/http"
+
 	"sbermortgagecalculator/internal/models"
 )
 
@@ -36,5 +37,9 @@ func GetCachedLoans(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(cachedLoans)
+	err := json.NewEncoder(w).Encode(cachedLoans)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

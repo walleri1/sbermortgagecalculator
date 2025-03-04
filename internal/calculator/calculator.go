@@ -1,4 +1,4 @@
-// Calculator package with sets of functions for calculating the credit burden of credit programs
+// Package calculator with sets of functions for calculating the credit burden of credit programs
 package calculator
 
 import (
@@ -74,10 +74,10 @@ func CalculateMortgageAggregates(request models.LoanRequest) (*models.Aggregates
 	lastPaymentDate := time.Now().AddDate(0, int(loanMonths.IntPart()), 0).Format("2006-01-02")
 
 	return &models.Aggregates{
-		Rate:            int(rate),
-		LoanSum:         int(loanSum.IntPart()),
-		MonthlyPayment:  int(monthlyPayment.IntPart()),
-		Overpayment:     int(overpayment.IntPart()),
+		Rate:            int8(rate),
+		LoanSum:         loanSum.IntPart(),
+		MonthlyPayment:  int32(monthlyPayment.IntPart()),
+		Overpayment:     overpayment.IntPart(),
 		LastPaymentDate: lastPaymentDate,
 	}, nil
 }
