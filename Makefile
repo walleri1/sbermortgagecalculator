@@ -1,5 +1,6 @@
 IMAGE_NAME = sbermortgagecalculator
 TAG = $(shell date +%Y%m%d)
+TESTING_IMAGE = tparse
 
 lint:
 	golangci-lint run ./...
@@ -20,8 +21,13 @@ run: image
 vendor:
 	docker run --rm -v "$(shell pwd):/app" golang:alpine sh -c "cd /app; go mod tidy; go mod vendor"
 
-test: vendor
-	docker run --rm -v "$(shell pwd):/app" golang:alpine sh -c "go install github.com/mfridman/tparse@latest; cd /app; go test -v -cover ./... -json | tparse -all"
+image_testing:
+	@if [ -z "$$(docker images -q $(TESTING_IMAGE))" ]; then \
+		docker build -f deployments/Dockerfile.testing -t $(TESTING_IMAGE) .; \
+	fi
+
+test: vendor image_testing
+	docker run --rm -v "$(shell pwd):/app" $(TESTING_IMAGE) sh -c "cd /app; go test -v -cover ./... -json | tparse -all"
 
 clean:
 	docker rmi $(IMAGE_NAME):$(TAG) $(IMAGE_NAME):latest $(docker images -f "dangling=true" -q) || true
