@@ -1,4 +1,4 @@
-// Package routes implements all service paths
+// Package routes implements all service paths.
 package routes
 
 import (
@@ -7,7 +7,7 @@ import (
 	"sbermortgagecalculator/internal/routes/paths"
 )
 
-// SetupRoutes sets handlers for paths
+// SetupRoutes sets handlers for paths.
 func SetupRoutes(router *mux.Router) {
 	router.HandleFunc("/execute", paths.ExecuteLoanCalculation).Methods("POST")
 	router.HandleFunc("/cache", paths.GetCachedLoans).Methods("GET")

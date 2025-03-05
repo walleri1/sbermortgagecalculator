@@ -6,5 +6,5 @@ COPY ./utils/tparse /utils/tparse
 WORKDIR /utils/tparse
 RUN CGO_ENABLED=0 GOOS=linux go build -o tparse .
 
-FROM golang:alpine as testing
+FROM golang:alpine
 COPY --from=builder /utils/tparse/tparse /usr/local/bin/tparse

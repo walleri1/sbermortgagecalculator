@@ -1,4 +1,4 @@
-// The paths package implements cache path service
+// The paths package implements cache path service.
 package paths
 
 import (
@@ -8,7 +8,7 @@ import (
 	"sbermortgagecalculator/internal/models"
 )
 
-// GetCachedLoans handler for getting the cache of all calculations
+// GetCachedLoans handler for getting the cache of all calculations.
 func GetCachedLoans(w http.ResponseWriter, r *http.Request) {
 	// TODO: release logic path /cache
 	// Mock

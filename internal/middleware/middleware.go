@@ -1,4 +1,4 @@
-// Package middleware implements the logic of measuring the execution time of service requests
+// Package middleware implements the logic of measuring the execution time of service requests.
 package middleware
 
 import (
@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// LoggingMiddleware logging.
 func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		begin := time.Now()

@@ -8,12 +8,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// struct Config yaml file
+// struct Config yaml file.
 type Config struct {
 	Port int `yaml:"port"`
 }
 
-// LoadConfig read config from yml file
+// LoadConfig read config from yml file.
 func LoadConfig(filepath string) (*Config, error) {
 	data, err := os.ReadFile(filepath)
 	if err != nil {

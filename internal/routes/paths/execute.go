@@ -1,13 +1,14 @@
-// The routes package implements execute path service
+// The routes package implements execute path service.
 package paths
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"sbermortgagecalculator/internal/models"
 )
 
-// ExecuteLoanCalculation handler for mortgage calculation
+// ExecuteLoanCalculation handler for mortgage calculation.
 func ExecuteLoanCalculation(w http.ResponseWriter, r *http.Request) {
 	var request models.LoanRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -33,5 +34,9 @@ func ExecuteLoanCalculation(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	data, err := json.Marshal(response)
+	if err != nil {
+		log.Printf("Unmarshell %v", err)
+	}
+	w.Write(data)
 }
