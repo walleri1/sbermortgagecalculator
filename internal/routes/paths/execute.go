@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"sync/atomic"
 
-	"sbermortgagecalculator/internal/cache"
 	"sbermortgagecalculator/internal/calculator"
 	"sbermortgagecalculator/internal/models"
 )
@@ -58,7 +57,7 @@ func ExecuteLoanCalculation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	requestID := atomic.AddInt64(&requestIDCounter, 1)
-	cache.GetCache().Add(models.CachedLoan{
+	loanCache.Store(requestID, models.CachedLoan{
 		ID:                int(requestID),
 		CalculationResult: response.Result,
 	})

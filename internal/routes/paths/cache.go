@@ -4,8 +4,6 @@ package paths
 import (
 	"log"
 	"net/http"
-
-	"sbermortgagecalculator/internal/cache"
 )
 
 // GetCachedLoans handler for getting the cache of all calculations.
@@ -15,7 +13,7 @@ func GetCachedLoans(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cachedLoans := cache.GetCache().GetSortedLoans()
+	cachedLoans := getLoansFromSyncMap(&loanCache)
 	if len(cachedLoans) == 0 {
 		log.Println("[INFO] Cache is empty, no loans to retrieve")
 		writeJSONError(w, "empty cache", http.StatusNotFound)
