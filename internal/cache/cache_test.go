@@ -12,7 +12,7 @@ func TestCachedLoanStore_AddAndGet(t *testing.T) {
 
 	loan := models.CachedLoan{
 		ID: 1,
-		Result: models.CalculationResult{
+		CalculationResult: models.CalculationResult{
 			Params: models.LoanParams{
 				ObjectCost:     5000000,
 				InitialPayment: 1000000,
@@ -48,7 +48,7 @@ func TestCachedLoanStore_Remove(t *testing.T) {
 
 	loan := models.CachedLoan{
 		ID: 1,
-		Result: models.CalculationResult{
+		CalculationResult: models.CalculationResult{
 			Params: models.LoanParams{
 				ObjectCost:     5000000,
 				InitialPayment: 1000000,

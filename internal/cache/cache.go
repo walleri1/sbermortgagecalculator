@@ -14,6 +14,16 @@ type CachedLoanStore struct {
 	mu    sync.RWMutex
 }
 
+var store *CachedLoanStore
+
+// GetCache singelton pattern
+func GetCache() *CachedLoanStore {
+	if store == nil {
+		store = NewCachedLoanStore()
+	}
+	return store
+}
+
 // NewCachedLoanStore creates a new storage for CachedLoan.
 func NewCachedLoanStore() *CachedLoanStore {
 	return &CachedLoanStore{
