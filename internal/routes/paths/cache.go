@@ -3,43 +3,33 @@ package paths
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
-	"sbermortgagecalculator/internal/models"
+	"sbermortgagecalculator/internal/cache"
 )
 
 // GetCachedLoans handler for getting the cache of all calculations.
-func GetCachedLoans(w http.ResponseWriter, _ *http.Request) {
-	// TODO: release logic path /cache
-	// Mock
-	cachedLoans := []models.CachedLoan{
-		{
-			ID: 0,
-			Result: models.CalculationResult{
-				Params: models.LoanParams{
-					ObjectCost:     5000000,
-					InitialPayment: 1000000,
-					Months:         240,
-				},
-				Program: models.Program{
-					Salary: true,
-				},
-				Aggregates: models.Aggregates{
-					Rate:            8,
-					LoanSum:         4000000,
-					MonthlyPayment:  33458,
-					Overpayment:     4029920,
-					LastPaymentDate: "2044-02-18",
-				},
-			},
-		},
+func GetCachedLoans(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Only GET method is allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	cachedLoans := cache.GetCache().GetSortedLoans()
+	if len(cachedLoans) == 0 {
+		http.Error(w, `{"error": empty cach}`, http.StatusBadRequest)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	err := json.NewEncoder(w).Encode(cachedLoans)
+	data, err := json.Marshal(cachedLoans)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		log.Println(err)
+	}
+	_, err = w.Write(data)
+	if err != nil {
+		log.Println(err)
 	}
 }

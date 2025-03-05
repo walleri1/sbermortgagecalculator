@@ -44,6 +44,6 @@ type LoanResponse struct {
 
 // CachedLoan is a structure for storing data in a cache.
 type CachedLoan struct {
-	Result CalculationResult `json:"result"`
-	ID     int               `json:"id"`
+	CalculationResult
+	ID int `json:"id"`
 }

@@ -3,7 +3,6 @@ package calculator
 
 import (
 	"errors"
-	"log"
 	"time"
 
 	"github.com/shopspring/decimal"
@@ -41,16 +40,10 @@ func CalculateMortgageAggregates(request models.LoanRequest) (models.Aggregates,
 		return models.Aggregates{}, err
 	}
 
-	log.Printf("objectCost: %d", request.ObjectCost)
-	log.Printf("initialPayment: %d", request.InitialPayment)
-
 	// Convert inputs to decimal.
 	objectCost := decimal.NewFromInt(int64(request.ObjectCost))
 	initialPayment := decimal.NewFromInt(int64(request.InitialPayment))
 	loanSum := objectCost.Sub(initialPayment)
-	log.Printf("objectCost: %d", objectCost.IntPart())
-	log.Printf("initialPayment: %d", initialPayment.IntPart())
-	log.Printf("Loan sum: %d", loanSum.IntPart())
 
 	// Making sure that the borrower needs the money.
 	if loanSum.LessThanOrEqual(decimal.Zero) {
