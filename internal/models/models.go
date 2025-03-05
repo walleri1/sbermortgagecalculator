@@ -26,8 +26,8 @@ type Aggregates struct {
 
 // LoanRequest is a structure representing a JSON request.
 type LoanRequest struct {
-	Params  LoanParams `json:"params"`
-	Program Program    `json:"program"`
+	LoanParams
+	Program Program `json:"program"`
 }
 
 // CalculationResult combines a query and a calculation result.

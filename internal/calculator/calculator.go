@@ -3,6 +3,7 @@ package calculator
 
 import (
 	"errors"
+	"log"
 	"time"
 
 	"github.com/shopspring/decimal"
@@ -28,32 +29,38 @@ var (
 )
 
 // CalculateMortgageAggregates computes the loan parameters (rate, loan amount, monthly payment, overpayment, etc.).
-func CalculateMortgageAggregates(request models.LoanRequest) (*models.Aggregates, error) {
+func CalculateMortgageAggregates(request models.LoanRequest) (models.Aggregates, error) {
 	// Validate input.
 	if err := validateRequest(request); err != nil {
-		return nil, err
+		return models.Aggregates{}, err
 	}
 
 	// Determine the interest rate.
 	rate, err := selectRate(request.Program)
 	if err != nil {
-		return nil, err
+		return models.Aggregates{}, err
 	}
 
+	log.Printf("objectCost: %d", request.ObjectCost)
+	log.Printf("initialPayment: %d", request.InitialPayment)
+
 	// Convert inputs to decimal.
-	objectCost := decimal.NewFromInt(int64(request.Params.ObjectCost))
-	initialPayment := decimal.NewFromInt(int64(request.Params.InitialPayment))
+	objectCost := decimal.NewFromInt(int64(request.ObjectCost))
+	initialPayment := decimal.NewFromInt(int64(request.InitialPayment))
 	loanSum := objectCost.Sub(initialPayment)
+	log.Printf("objectCost: %d", objectCost.IntPart())
+	log.Printf("initialPayment: %d", initialPayment.IntPart())
+	log.Printf("Loan sum: %d", loanSum.IntPart())
 
 	// Making sure that the borrower needs the money.
 	if loanSum.LessThanOrEqual(decimal.Zero) {
-		return nil, ErrLoanSumZeroOrNegative
+		return models.Aggregates{}, ErrLoanSumZeroOrNegative
 	}
 
 	// Ensure the number of loanMonths is positive.
-	loanMonths := decimal.NewFromInt(int64(request.Params.Months))
+	loanMonths := decimal.NewFromInt(int64(request.Months))
 	if loanMonths.LessThanOrEqual(decimal.Zero) {
-		return nil, ErrMonthsShouldBePositive
+		return models.Aggregates{}, ErrMonthsShouldBePositive
 	}
 
 	// Monthly interest rate in decimal form: rate / 100 / 12.
@@ -62,7 +69,7 @@ func CalculateMortgageAggregates(request models.LoanRequest) (*models.Aggregates
 	// Calculate the monthly payment (annuity formula - docs example_golang.xlsx).
 	monthlyPayment, err := calculateMonthlyPayment(loanSum, monthlyRate, loanMonths)
 	if err != nil {
-		return nil, err
+		return models.Aggregates{}, err
 	}
 
 	// Total amount of payments for the entire loan period with body and interest.
@@ -74,7 +81,7 @@ func CalculateMortgageAggregates(request models.LoanRequest) (*models.Aggregates
 	// Last payment date.
 	lastPaymentDate := time.Now().AddDate(0, int(loanMonths.IntPart()), 0).Format("2006-01-02")
 
-	return &models.Aggregates{
+	return models.Aggregates{
 		Rate:            rate,
 		LoanSum:         int(loanSum.IntPart()),
 		MonthlyPayment:  int(monthlyPayment.IntPart()),
@@ -135,8 +142,8 @@ func selectRate(program models.Program) (int, error) {
 
 // validateRequest validates the loan request parameters. Ensures initial payment, programs, and loan terms are valid.
 func validateRequest(request models.LoanRequest) error {
-	minInitialPayment := decimal.NewFromInt(int64(request.Params.ObjectCost)).Mul(decimal.NewFromFloat(0.2))
-	initialPayment := decimal.NewFromInt(int64(request.Params.InitialPayment))
+	minInitialPayment := decimal.NewFromInt(int64(request.ObjectCost)).Mul(decimal.NewFromFloat(0.2))
+	initialPayment := decimal.NewFromInt(int64(request.InitialPayment))
 
 	if initialPayment.LessThan(minInitialPayment) {
 		return ErrInitialPaymentTooLow
