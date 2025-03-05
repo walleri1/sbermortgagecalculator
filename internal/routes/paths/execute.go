@@ -14,7 +14,7 @@ import (
 	"sbermortgagecalculator/internal/models"
 )
 
-var requestIDCounter int64
+var requestIDCounter int64 = -1
 
 // ExecuteLoanCalculation handler for mortgage calculation.
 func ExecuteLoanCalculation(w http.ResponseWriter, r *http.Request) {
