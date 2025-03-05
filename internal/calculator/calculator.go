@@ -10,10 +10,11 @@ import (
 	"sbermortgagecalculator/internal/models"
 )
 
+// Programs mortgage.
 const (
-	CorporateRate = 8  // corporate program.
-	MilitaryRate  = 9  // military program.
-	BaseRate      = 10 // base program.
+	CorporateRate = 8
+	MilitaryRate  = 9
+	BaseRate      = 10
 )
 
 // Errors for validation.
@@ -74,7 +75,7 @@ func CalculateMortgageAggregates(request models.LoanRequest) (*models.Aggregates
 	lastPaymentDate := time.Now().AddDate(0, int(loanMonths.IntPart()), 0).Format("2006-01-02")
 
 	return &models.Aggregates{
-		Rate:            int(rate),
+		Rate:            rate,
 		LoanSum:         int(loanSum.IntPart()),
 		MonthlyPayment:  int(monthlyPayment.IntPart()),
 		Overpayment:     int(overpayment.IntPart()),
@@ -102,8 +103,8 @@ func calculateMonthlyPayment(loanSum, monthlyRate, months decimal.Decimal) (deci
 	compoundRate := decimal.NewFromInt(1).Add(monthlyRate).Pow(months)
 
 	// Calculate monthly payment.
-	numerator := loanSum.Mul(monthlyRate).Mul(compoundRate) //S * (G * (1 + G)^T)
-	denominator := compoundRate.Sub(decimal.NewFromInt(1))  //((1 + G)^T - 1)
+	numerator := loanSum.Mul(monthlyRate).Mul(compoundRate) // S * (G * (1 + G)^T)
+	denominator := compoundRate.Sub(decimal.NewFromInt(1))  // ((1 + G)^T - 1)
 
 	// ((1 + G)^T - 1) == 0.
 	if denominator.IsZero() {

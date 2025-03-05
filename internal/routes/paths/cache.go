@@ -1,4 +1,4 @@
-// The paths package implements cache path service.
+// Package paths implements cache path service.
 package paths
 
 import (
@@ -9,7 +9,7 @@ import (
 )
 
 // GetCachedLoans handler for getting the cache of all calculations.
-func GetCachedLoans(w http.ResponseWriter, r *http.Request) {
+func GetCachedLoans(w http.ResponseWriter, _ *http.Request) {
 	// TODO: release logic path /cache
 	// Mock
 	cachedLoans := []models.CachedLoan{
