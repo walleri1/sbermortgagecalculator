@@ -40,7 +40,7 @@ func main() {
 	)
 
 	address := fmt.Sprintf(":%d", config.Port)
-	fmt.Printf("The server is running on the port %s\n", address)
+	log.Printf("The server is running on the port %s\n", address)
 	srv := &http.Server{
 		Addr:         address,
 		Handler:      corsMiddleware(r),

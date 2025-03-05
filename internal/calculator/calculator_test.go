@@ -21,7 +21,7 @@ func TestCalculateMortgageAggregates(t *testing.T) {
 		{
 			name: "Valid corporate program",
 			request: models.LoanRequest{
-				Params: models.LoanParams{
+				LoanParams: models.LoanParams{
 					ObjectCost:     5000000,
 					InitialPayment: 1000000,
 					Months:         240,
@@ -36,7 +36,7 @@ func TestCalculateMortgageAggregates(t *testing.T) {
 		{
 			name: "Valid military program",
 			request: models.LoanRequest{
-				Params: models.LoanParams{
+				LoanParams: models.LoanParams{
 					ObjectCost:     3000000,
 					InitialPayment: 600000,
 					Months:         180,
@@ -51,7 +51,7 @@ func TestCalculateMortgageAggregates(t *testing.T) {
 		{
 			name: "Valid base program",
 			request: models.LoanRequest{
-				Params: models.LoanParams{
+				LoanParams: models.LoanParams{
 					ObjectCost:     3000000,
 					InitialPayment: 600000,
 					Months:         180,
@@ -66,7 +66,7 @@ func TestCalculateMortgageAggregates(t *testing.T) {
 		{
 			name: "Invalid no program selection",
 			request: models.LoanRequest{
-				Params: models.LoanParams{
+				LoanParams: models.LoanParams{
 					ObjectCost:     5000000,
 					InitialPayment: 1000000,
 					Months:         240,
@@ -78,7 +78,7 @@ func TestCalculateMortgageAggregates(t *testing.T) {
 		{
 			name: "Invalid two program selection: salary, base",
 			request: models.LoanRequest{
-				Params: models.LoanParams{
+				LoanParams: models.LoanParams{
 					ObjectCost:     5000000,
 					InitialPayment: 1000000,
 					Months:         240,
@@ -93,7 +93,7 @@ func TestCalculateMortgageAggregates(t *testing.T) {
 		{
 			name: "Invalid two program selection: salary, military",
 			request: models.LoanRequest{
-				Params: models.LoanParams{
+				LoanParams: models.LoanParams{
 					ObjectCost:     5000000,
 					InitialPayment: 1000000,
 					Months:         240,
@@ -108,7 +108,7 @@ func TestCalculateMortgageAggregates(t *testing.T) {
 		{
 			name: "Invalid two program selection: base, military",
 			request: models.LoanRequest{
-				Params: models.LoanParams{
+				LoanParams: models.LoanParams{
 					ObjectCost:     5000000,
 					InitialPayment: 1000000,
 					Months:         240,
@@ -123,7 +123,7 @@ func TestCalculateMortgageAggregates(t *testing.T) {
 		{
 			name: "Low initial payment",
 			request: models.LoanRequest{
-				Params: models.LoanParams{
+				LoanParams: models.LoanParams{
 					ObjectCost:     6000000,
 					InitialPayment: 500000,
 					Months:         240,
@@ -135,7 +135,7 @@ func TestCalculateMortgageAggregates(t *testing.T) {
 		{
 			name: "Lack of loan amount",
 			request: models.LoanRequest{
-				Params: models.LoanParams{
+				LoanParams: models.LoanParams{
 					ObjectCost:     6000000,
 					InitialPayment: 6000000,
 					Months:         240,
@@ -147,7 +147,7 @@ func TestCalculateMortgageAggregates(t *testing.T) {
 		{
 			name: "Zero Months",
 			request: models.LoanRequest{
-				Params: models.LoanParams{
+				LoanParams: models.LoanParams{
 					ObjectCost:     4000000,
 					InitialPayment: 800000,
 					Months:         0,

@@ -28,7 +28,7 @@ run: image
 	docker run --rm $(IMAGE_NAME):latest
 
 deps:
-	docker run --rm -v "$(shell pwd):/app" golang:alpine sh -c "cd /app; go mod vendor"
+	docker run --rm -v "$(shell pwd):/app" golang:1.21-alpine sh -c "cd /app; go mod vendor"
 
 image_testing:
 	@if [ -z "$$(docker images -q $(TESTING_IMAGE))" ]; then \

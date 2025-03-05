@@ -1,37 +1,67 @@
-// The routes package implements execute path service
+// Package paths implements execute path service.
 package paths
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
+	"log"
 	"net/http"
+	"sync/atomic"
+
+	"sbermortgagecalculator/internal/calculator"
 	"sbermortgagecalculator/internal/models"
 )
 
-// ExecuteLoanCalculation handler for mortgage calculation
+var requestIDCounter int64 = -1
+
+// ExecuteLoanCalculation handler for mortgage calculation.
 func ExecuteLoanCalculation(w http.ResponseWriter, r *http.Request) {
-	var request models.LoanRequest
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		http.Error(w, `{"error": "invalid request"}`, http.StatusBadRequest)
+	if r.Method != http.MethodPost {
+		writeJSONError(w, "Only POST method is allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// TODO: release logic path /execute
-	// Mock
+	var request models.LoanRequest
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("[ERROR] Failed to read request body: %v", err)
+		writeJSONError(w, "Failed to read request body", http.StatusBadRequest)
+		return
+	}
+	defer func() {
+		if err = r.Body.Close(); err != nil {
+			log.Printf("Error closing body: %v", err)
+		}
+	}()
+
+	if err = json.Unmarshal(body, &request); err != nil {
+		log.Printf("[ERROR] Invalid JSON format: %v", err)
+		writeJSONError(w, "Invalid JSON format", http.StatusBadRequest)
+		return
+	}
+
+	aggregates, err := calculator.CalculateMortgageAggregates(request)
+	if err != nil {
+		log.Printf("[ERROR] Mortgage calculation failed: %v", err)
+		writeJSONError(w, fmt.Sprintf("Calculation error: %s", err.Error()), http.StatusBadRequest)
+		return
+	}
+
 	response := models.LoanResponse{
 		Result: models.CalculationResult{
-			Params:  request.Params,
-			Program: request.Program,
-			Aggregates: models.Aggregates{
-				Rate:            8,
-				LoanSum:         4000000,
-				MonthlyPayment:  33458,
-				Overpayment:     4029920,
-				LastPaymentDate: "2044-02-18",
-			},
+			Aggregates: aggregates,
+			Params:     request.LoanParams,
+			Program:    request.Program,
 		},
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	requestID := atomic.AddInt64(&requestIDCounter, 1)
+	loanCache.Store(requestID, models.CachedLoan{
+		ID:                int(requestID),
+		CalculationResult: response.Result,
+	})
+
+	writeJSONResponse(w, response, http.StatusOK)
+	log.Printf("[INFO] Calculation succeeded for Request ID: %d", requestID)
 }

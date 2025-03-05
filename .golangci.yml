@@ -6,7 +6,7 @@ run:
   go: '1.21'
 
 output:
-  format: colored-line-number
+  formats: colored-line-number
 
 issues:
   max-issues-per-linter: 1000
@@ -29,10 +29,6 @@ linters-settings:
     allow-unused: true
     require-explanation: true
     require-specific: true
-
-  gosimple:
-    go: "1.21"
-    checks: ["all"]
 
   gocyclo:
     min-complexity: 20

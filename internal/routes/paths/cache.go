@@ -1,45 +1,25 @@
-// The paths package implements cache path service
+// Package paths implements cache path service.
 package paths
 
 import (
-	"encoding/json"
+	"log"
 	"net/http"
-
-	"sbermortgagecalculator/internal/models"
 )
 
-// GetCachedLoans handler for getting the cache of all calculations
+// GetCachedLoans handler for getting the cache of all calculations.
 func GetCachedLoans(w http.ResponseWriter, r *http.Request) {
-	// TODO: release logic path /cache
-	// Mock
-	cachedLoans := []models.CachedLoan{
-		{
-			ID: 0,
-			Result: models.CalculationResult{
-				Params: models.LoanParams{
-					ObjectCost:     5000000,
-					InitialPayment: 1000000,
-					Months:         240,
-				},
-				Program: models.Program{
-					Salary: true,
-				},
-				Aggregates: models.Aggregates{
-					Rate:            8,
-					LoanSum:         4000000,
-					MonthlyPayment:  33458,
-					Overpayment:     4029920,
-					LastPaymentDate: "2044-02-18",
-				},
-			},
-		},
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	err := json.NewEncoder(w).Encode(cachedLoans)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if r.Method != http.MethodGet {
+		writeJSONError(w, "Only GET method is allowed", http.StatusMethodNotAllowed)
 		return
 	}
+
+	cachedLoans := getLoansFromSyncMap(&loanCache)
+	if len(cachedLoans) == 0 {
+		log.Println("[INFO] Cache is empty, no loans to retrieve")
+		writeJSONError(w, "empty cache", http.StatusNotFound)
+		return
+	}
+
+	writeJSONResponse(w, cachedLoans, http.StatusOK)
+	log.Printf("[INFO] Successfully returned %d cached loan(s)", len(cachedLoans))
 }

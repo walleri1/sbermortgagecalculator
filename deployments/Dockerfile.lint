@@ -1,4 +1,4 @@
-FROM golang:alpine as builder
+FROM golang:1.23-alpine AS builder
 
 WORKDIR /utils
 
@@ -6,5 +6,5 @@ COPY ./utils/golangci-lint /utils/golangci-lint
 WORKDIR /utils/golangci-lint
 RUN CGO_ENABLED=0 GOOS=linux go build -o golangci-lint ./cmd/golangci-lint
 
-FROM golang:alpine as linting
+FROM golang:1.21-alpine
 COPY --from=builder /utils/golangci-lint/golangci-lint /usr/local/bin/golangci-lint
