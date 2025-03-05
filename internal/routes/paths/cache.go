@@ -2,7 +2,6 @@
 package paths
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 
@@ -12,24 +11,17 @@ import (
 // GetCachedLoans handler for getting the cache of all calculations.
 func GetCachedLoans(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Only GET method is allowed", http.StatusMethodNotAllowed)
+		writeJSONError(w, "Only GET method is allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
 	cachedLoans := cache.GetCache().GetSortedLoans()
 	if len(cachedLoans) == 0 {
-		http.Error(w, `{"error": empty cach}`, http.StatusBadRequest)
+		log.Println("[INFO] Cache is empty, no loans to retrieve")
+		writeJSONError(w, "Cache is empty", http.StatusNotFound)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	data, err := json.Marshal(cachedLoans)
-	if err != nil {
-		log.Println(err)
-	}
-	_, err = w.Write(data)
-	if err != nil {
-		log.Println(err)
-	}
+	writeJSONResponse(w, cachedLoans, http.StatusOK)
+	log.Printf("[INFO] Successfully returned %d cached loan(s)", len(cachedLoans))
 }
