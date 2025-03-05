@@ -15,8 +15,11 @@ func getLoansFromSyncMap(m *sync.Map) []models.CachedLoan {
 	var loans []models.CachedLoan
 
 	m.Range(func(_, value any) bool {
-		loan := value.(models.CachedLoan)
-		loans = append(loans, loan)
+		if loan, ok := value.(models.CachedLoan); ok {
+			loans = append(loans, loan)
+		} else {
+			log.Printf("Warning: unexpected type in sync.Map: %T\n", value)
+		}
 		return true
 	})
 

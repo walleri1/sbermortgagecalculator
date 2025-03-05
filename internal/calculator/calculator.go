@@ -3,6 +3,7 @@ package calculator
 
 import (
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/shopspring/decimal"
@@ -17,6 +18,8 @@ const (
 	BaseRate      = 10
 )
 
+var aggregateCache sync.Map
+
 // Errors for validation.
 var (
 	ErrNoProgramSelected      = errors.New("choose program")
@@ -29,12 +32,10 @@ var (
 
 // CalculateMortgageAggregates computes the loan parameters (rate, loan amount, monthly payment, overpayment, etc.).
 func CalculateMortgageAggregates(request models.LoanRequest) (models.Aggregates, error) {
-	// Validate input.
 	if err := validateRequest(request); err != nil {
 		return models.Aggregates{}, err
 	}
 
-	// Determine the interest rate.
 	rate, err := selectRate(request.Program)
 	if err != nil {
 		return models.Aggregates{}, err
@@ -56,6 +57,13 @@ func CalculateMortgageAggregates(request models.LoanRequest) (models.Aggregates,
 		return models.Aggregates{}, ErrMonthsShouldBePositive
 	}
 
+	aggregateAny, ok := aggregateCache.Load(request)
+	if ok {
+		if aggregate, ok := aggregateAny.(models.Aggregates); ok {
+			return aggregate, nil
+		}
+	}
+
 	// Monthly interest rate in decimal form: rate / 100 / 12.
 	monthlyRate := decimal.NewFromInt(int64(rate)).Div(decimal.NewFromInt(100)).Div(decimal.NewFromInt(12))
 
@@ -74,13 +82,15 @@ func CalculateMortgageAggregates(request models.LoanRequest) (models.Aggregates,
 	// Last payment date.
 	lastPaymentDate := time.Now().AddDate(0, int(loanMonths.IntPart()), 0).Format("2006-01-02")
 
-	return models.Aggregates{
+	aggregate := models.Aggregates{
 		Rate:            rate,
 		LoanSum:         int(loanSum.IntPart()),
 		MonthlyPayment:  int(monthlyPayment.IntPart()),
 		Overpayment:     int(overpayment.IntPart()),
 		LastPaymentDate: lastPaymentDate,
-	}, nil
+	}
+	aggregateCache.Store(request, aggregate)
+	return aggregate, nil
 }
 
 // calculateMonthlyPayment computes the monthly payment using the annuity formula.
