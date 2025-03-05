@@ -1,0 +1,18 @@
+services:
+  calculator:
+    container_name: calculator
+    image: sbermortgagecalculator:latest
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+  
+  swagger-ui:
+    image: swaggerapi/swagger-ui:latest
+    container_name: swagger-ui
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./config/swagger.yaml:/tmp/swagger.yaml:ro
+    environment:
+      - SWAGGER_JSON=/tmp/swagger.yaml
+    restart: unless-stopped   

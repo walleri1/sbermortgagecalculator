@@ -1,0 +1,16 @@
+#!/bin/sh
+
+if ! [ -x "$(command -v golangci-lint)" ]; then
+    echo "Fatal: golangci-lint is not install" >&2
+    exit 1
+fi
+
+golangci-lint run ./...
+status=$?
+
+if [ $status -ne 0 ]; then
+    echo "golangci-lint fing problems"
+    exit 1
+fi
+
+exit 0
