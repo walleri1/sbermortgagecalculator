@@ -18,7 +18,7 @@ func GetCachedLoans(w http.ResponseWriter, r *http.Request) {
 	cachedLoans := cache.GetCache().GetSortedLoans()
 	if len(cachedLoans) == 0 {
 		log.Println("[INFO] Cache is empty, no loans to retrieve")
-		writeJSONError(w, "Cache is empty", http.StatusNotFound)
+		writeJSONError(w, "empty cache", http.StatusNotFound)
 		return
 	}
 

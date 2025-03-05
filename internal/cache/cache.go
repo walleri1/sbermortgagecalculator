@@ -16,7 +16,7 @@ type CachedLoanStore struct {
 
 var store *CachedLoanStore
 
-// GetCache singelton pattern
+// GetCache singelton pattern.
 func GetCache() *CachedLoanStore {
 	if store == nil {
 		store = NewCachedLoanStore()

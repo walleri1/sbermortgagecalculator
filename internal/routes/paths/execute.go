@@ -14,7 +14,7 @@ import (
 	"sbermortgagecalculator/internal/models"
 )
 
-var requestIDCounter int64 = 0
+var requestIDCounter int64
 
 // ExecuteLoanCalculation handler for mortgage calculation.
 func ExecuteLoanCalculation(w http.ResponseWriter, r *http.Request) {
@@ -30,9 +30,13 @@ func ExecuteLoanCalculation(w http.ResponseWriter, r *http.Request) {
 		writeJSONError(w, "Failed to read request body", http.StatusBadRequest)
 		return
 	}
-	defer r.Body.Close()
+	defer func() {
+		if err = r.Body.Close(); err != nil {
+			log.Printf("Error closing body: %v", err)
+		}
+	}()
 
-	if err := json.Unmarshal(body, &request); err != nil {
+	if err = json.Unmarshal(body, &request); err != nil {
 		log.Printf("[ERROR] Invalid JSON format: %v", err)
 		writeJSONError(w, "Invalid JSON format", http.StatusBadRequest)
 		return
