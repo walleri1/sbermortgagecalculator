@@ -174,6 +174,22 @@ func TestCalculateMortgageAggregates(t *testing.T) {
 	}
 }
 
+func TestCalculateMortgageAggregatesCached(t *testing.T) {
+	request := models.LoanRequest{
+		LoanParams: models.LoanParams{
+			ObjectCost:     5000000,
+			InitialPayment: 1000000,
+			Months:         240,
+		},
+		Program: models.Program{Salary: true},
+	}
+	resultFirst, err := CalculateMortgageAggregates(request)
+	assert.NoError(t, err)
+	resutlSecond, err := CalculateMortgageAggregates(request)
+	assert.NoError(t, err)
+	assert.Equal(t, resultFirst, resutlSecond)
+}
+
 func TestCalculateMonthlyPayment(t *testing.T) {
 	tests := []struct {
 		name           string
