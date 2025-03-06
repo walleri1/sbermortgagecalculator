@@ -60,6 +60,7 @@ func CalculateMortgageAggregates(request models.LoanRequest) (models.Aggregates,
 	aggregateAny, ok := aggregateCache.Load(request)
 	if ok {
 		if aggregate, ok := aggregateAny.(models.Aggregates); ok {
+			aggregate.LastPaymentDate = time.Now().AddDate(0, int(loanMonths.IntPart()), 0).Format("2006-01-02")
 			return aggregate, nil
 		}
 	}
