@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"sbermortgagecalculator/internal/models"
 	"sync"
+
+	"sbermortgagecalculator/internal/models"
 )
 
 var loanCache sync.Map
@@ -33,6 +34,7 @@ func writeJSONResponse(w http.ResponseWriter, data any, statusCode int) {
 
 	if err := json.NewEncoder(w).Encode(data); err != nil {
 		log.Printf("[ERROR] Failed to write JSON response: %v", err)
+		http.Error(w, `{"error": "internal server error"}`, http.StatusInternalServerError)
 	}
 }
 
