@@ -1,1 +1,28 @@
-port: 8080
+server:
+  port: 8080
+  read_timeout: 10s
+  write_timeout: 10s
+  idle_timeout: 20s
+
+logging:
+  level: info
+  file: /var/log/mortgage-calculator.log
+
+cors:
+  allowed_origins:
+    - "*"
+  allowed_methods:
+    - GET
+    - POST
+    - OPTIONS
+  allowed_headers:
+    - Content-Type
+    - Authorization
+
+cache:
+  max_size: 1000
+  ttl: 24h
+
+swagger:
+  enabled: true
+  path: /swagger

@@ -24,7 +24,10 @@ func createTempConfigFile(t *testing.T, content string) string {
 }
 
 func TestLoadConfig_ValidFile(t *testing.T) {
-	content := `port: 8080`
+	content := `
+server:
+  port: 8080
+`
 	fileName := createTempConfigFile(t, content)
 	defer os.Remove(fileName)
 
@@ -36,11 +39,15 @@ func TestLoadConfig_ValidFile(t *testing.T) {
 	conf, err := LoadConfig(renamedFilePath)
 	assert.NoError(t, err)
 	assert.NotNil(t, conf)
-	assert.Equal(t, 8080, conf.Port)
+	t.Logf("Config: %+v", conf)
+	assert.Equal(t, 8080, conf.Server.Port)
 }
 
 func TestLoadConfig_InvalidFileName(t *testing.T) {
-	content := `port: 8080`
+	content := `
+server:
+  port: 8080
+`
 	fileName := createTempConfigFile(t, content)
 	defer os.Remove(fileName)
 
@@ -50,7 +57,10 @@ func TestLoadConfig_InvalidFileName(t *testing.T) {
 }
 
 func TestLoadConfig_InvalidYAML(t *testing.T) {
-	content := `port: not-a-number`
+	content := `
+server:
+  port: not-a-number
+`
 	fileName := createTempConfigFile(t, content)
 	defer os.Remove(fileName)
 

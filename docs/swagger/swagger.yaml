@@ -1,0 +1,157 @@
+openapi: 3.0.0
+info:
+  title: SberMortgageCalculator API
+  description: API для расчета параметров ипотеки
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: Локальный сервер разработки
+
+paths:
+  /execute:
+    post:
+      summary: Расчет параметров ипотеки
+      description: Рассчитывает параметры ипотеки на основе входных данных
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoanRequest'
+      responses:
+        '200':
+          description: Успешный расчет
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoanResponse'
+        '400':
+          description: Ошибка валидации или расчета
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /cache:
+    get:
+      summary: Получение кэшированных расчетов
+      description: Возвращает все сохраненные в кэше расчеты ипотеки
+      responses:
+        '200':
+          description: Успешное получение кэша
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CachedLoan'
+        '400':
+          description: Кэш пуст
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    LoanRequest:
+      type: object
+      required:
+        - object_cost
+        - initial_payment
+        - months
+        - program
+      properties:
+        object_cost:
+          type: integer
+          description: Стоимость объекта
+          minimum: 1
+        initial_payment:
+          type: integer
+          description: Первоначальный взнос
+          minimum: 0
+        months:
+          type: integer
+          description: Срок кредита в месяцах
+          minimum: 1
+        program:
+          $ref: '#/components/schemas/Program'
+
+    Program:
+      type: object
+      properties:
+        salary:
+          type: boolean
+          description: Корпоративная программа
+        military:
+          type: boolean
+          description: Военная ипотека
+        base:
+          type: boolean
+          description: Базовая программа
+
+    LoanResponse:
+      type: object
+      properties:
+        result:
+          $ref: '#/components/schemas/CalculationResult'
+
+    CalculationResult:
+      type: object
+      properties:
+        params:
+          $ref: '#/components/schemas/LoanParams'
+        program:
+          $ref: '#/components/schemas/Program'
+        aggregates:
+          $ref: '#/components/schemas/Aggregates'
+
+    LoanParams:
+      type: object
+      properties:
+        object_cost:
+          type: integer
+        initial_payment:
+          type: integer
+        months:
+          type: integer
+
+    Aggregates:
+      type: object
+      properties:
+        rate:
+          type: integer
+          description: Годовая процентная ставка
+        loan_sum:
+          type: integer
+          description: Сумма кредита
+        monthly_payment:
+          type: integer
+          description: Ежемесячный платеж
+        overpayment:
+          type: integer
+          description: Переплата за весь срок
+        last_payment_date:
+          type: string
+          format: date
+          description: Дата последнего платежа
+
+    CachedLoan:
+      type: object
+      properties:
+        id:
+          type: integer
+        params:
+          $ref: '#/components/schemas/LoanParams'
+        program:
+          $ref: '#/components/schemas/Program'
+        aggregates:
+          $ref: '#/components/schemas/Aggregates'
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Сообщение об ошибке 

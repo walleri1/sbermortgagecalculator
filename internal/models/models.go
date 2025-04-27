@@ -1,6 +1,10 @@
 // Package models contains data structures and database interaction logic.
 package models
 
+import (
+	"time"
+)
+
 // LoanParams stores the user's request parameters.
 type LoanParams struct {
 	ObjectCost     int `json:"object_cost"`     // Cost object.
@@ -45,5 +49,11 @@ type LoanResponse struct {
 // CachedLoan is a structure for storing data in a cache.
 type CachedLoan struct {
 	CalculationResult
-	ID int `json:"id"`
+	ID        int64     `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// Expired проверяет, истек ли срок действия кэша
+func (c *CachedLoan) Expired(ttl time.Duration) bool {
+	return time.Since(c.CreatedAt) > ttl
 }

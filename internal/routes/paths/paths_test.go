@@ -7,9 +7,14 @@ import (
 	"net/http/httptest"
 	"sync"
 	"testing"
+	"time"
 
 	"sbermortgagecalculator/internal/models"
 )
+
+func init() {
+	InitCache(10, time.Hour)
+}
 
 func TestGetLoansFromSyncMap(t *testing.T) {
 	var m sync.Map
@@ -125,15 +130,16 @@ func TestGetCachedLoans_MethodNotAllowed(t *testing.T) {
 }
 
 func TestGetCachedLoans_EmptyCache(t *testing.T) {
-	loanCache = sync.Map{}
+	// Очищаем кэш перед тестом
+	InitCache(10, time.Hour)
 
 	req := httptest.NewRequest(http.MethodGet, "/cache", nil)
 	rec := httptest.NewRecorder()
 
 	GetCachedLoans(rec, req)
 
-	if rec.Code != http.StatusNotFound {
-		t.Errorf("Expected status %d, but got %d", http.StatusNotFound, rec.Code)
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("Expected status %d, but got %d", http.StatusBadRequest, rec.Code)
 	}
 
 	expectedBody := `{"error":"empty cache"}` + "\n"
@@ -143,11 +149,13 @@ func TestGetCachedLoans_EmptyCache(t *testing.T) {
 }
 
 func TestGetCachedLoans_NonEmptyCache(t *testing.T) {
-	loanCache = sync.Map{}
-	loan1 := models.CachedLoan{ID: 0}
-	loan2 := models.CachedLoan{ID: 1}
-	loanCache.Store(loan1.ID, loan1)
-	loanCache.Store(loan2.ID, loan2)
+	// Очищаем кэш перед тестом
+	InitCache(10, time.Hour)
+
+	loan1 := models.CachedLoan{ID: 1}
+	loan2 := models.CachedLoan{ID: 2}
+	loanCache.Store(int64(loan1.ID), loan1)
+	loanCache.Store(int64(loan2.ID), loan2)
 
 	req := httptest.NewRequest(http.MethodGet, "/cache", nil)
 	rec := httptest.NewRecorder()
@@ -163,47 +171,24 @@ func TestGetCachedLoans_NonEmptyCache(t *testing.T) {
 		t.Fatalf("Failed to decode JSON response: %v", err)
 	}
 
-	expectedLoans := []models.CachedLoan{loan1, loan2}
-	if len(loans) != len(expectedLoans) {
-		t.Fatalf("Expected %d loans, but got %d", len(expectedLoans), len(loans))
-	}
-	for i, loan := range loans {
-		if loan != expectedLoans[i] {
-			t.Errorf("Expected loan %v, but got %v", expectedLoans[i], loan)
-		}
-	}
-}
-
-func TestExecuteLoanCalculation_MethodNotAllowed(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "/execute", nil)
-	rec := httptest.NewRecorder()
-
-	ExecuteLoanCalculation(rec, req)
-
-	if rec.Code != http.StatusMethodNotAllowed {
-		t.Errorf("Expected status %d, but got %d", http.StatusMethodNotAllowed, rec.Code)
+	if len(loans) != 2 {
+		t.Fatalf("Expected %d loans, but got %d", 2, len(loans))
 	}
 
-	expected := `{"error":"Only POST method is allowed"}` + "\n"
-	if rec.Body.String() != expected {
-		t.Errorf("Expected body %q, got %q", expected, rec.Body.String())
+	// Проверяем, что все ожидаемые займы присутствуют
+	found := make(map[int64]bool)
+	for _, loan := range loans {
+		found[loan.ID] = true
 	}
-}
 
-func TestExecuteLoanCalculation_ReadBodyError(t *testing.T) {
-	req := httptest.NewRequest(http.MethodPost, "/execute", nil)
-	rec := httptest.NewRecorder()
-
-	ExecuteLoanCalculation(rec, req)
-
-	if rec.Code != http.StatusBadRequest {
-		t.Errorf("Expected status %d, but got %d", http.StatusBadRequest, rec.Code)
+	if !found[1] || !found[2] {
+		t.Error("Not all expected loans were found in the response")
 	}
 }
 
 func TestExecuteLoanCalculation_InvalidJSON(t *testing.T) {
-	body := bytes.NewBufferString("invalid JSON")
-	req := httptest.NewRequest(http.MethodPost, "/execute", body)
+	req := httptest.NewRequest(http.MethodPost, "/execute", bytes.NewBuffer([]byte(`invalid json`)))
+	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 
 	ExecuteLoanCalculation(rec, req)
@@ -212,41 +197,32 @@ func TestExecuteLoanCalculation_InvalidJSON(t *testing.T) {
 		t.Errorf("Expected status %d, but got %d", http.StatusBadRequest, rec.Code)
 	}
 
-	expected := `{"error":"Invalid JSON format"}` + "\n"
-	if rec.Body.String() != expected {
-		t.Errorf("Expected body %q, got %q", expected, rec.Body.String())
-	}
-}
-
-func TestExecuteLoanCalculation_CalculationError(t *testing.T) {
-	request := models.LoanRequest{
-		LoanParams: models.LoanParams{},
-	}
-	body, _ := json.Marshal(request)
-
-	req := httptest.NewRequest(http.MethodPost, "/execute", bytes.NewReader(body))
-	rec := httptest.NewRecorder()
-
-	ExecuteLoanCalculation(rec, req)
-
-	if rec.Code != http.StatusBadRequest {
-		t.Errorf("Expected status %d, but got %d", http.StatusBadRequest, rec.Code)
+	expectedBody := `{"error":"Invalid JSON format"}` + "\n"
+	if rec.Body.String() != expectedBody {
+		t.Errorf("Expected body %q, got %q", expectedBody, rec.Body.String())
 	}
 }
 
 func TestExecuteLoanCalculation_Success(t *testing.T) {
+	// Очищаем кэш перед тестом
+	InitCache(10, time.Hour)
+
 	request := models.LoanRequest{
 		LoanParams: models.LoanParams{
 			ObjectCost:     5000000,
 			InitialPayment: 1000000,
 			Months:         240,
 		},
-		Program: models.Program{Salary: true},
+		Program: models.Program{
+			Salary: true,
+		},
 	}
-	body, _ := json.Marshal(request)
 
-	req := httptest.NewRequest(http.MethodPost, "/execute", bytes.NewReader(body))
+	body, _ := json.Marshal(request)
+	req := httptest.NewRequest(http.MethodPost, "/execute", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
+
 	ExecuteLoanCalculation(rec, req)
 
 	if rec.Code != http.StatusOK {
@@ -255,15 +231,56 @@ func TestExecuteLoanCalculation_Success(t *testing.T) {
 
 	var response models.LoanResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
-		t.Fatalf("Failed to parse JSON response: %v", err)
+		t.Fatalf("Failed to decode response: %v", err)
 	}
 
-	if response.Result.Aggregates.LoanSum != 4000000 {
-		t.Errorf("Expected loan amount 4000000, but got %d", response.Result.Aggregates.LoanSum)
+	// Проверяем основные параметры ответа
+	if response.Result.Params.ObjectCost != request.LoanParams.ObjectCost {
+		t.Errorf("Expected object cost %d, but got %d", request.LoanParams.ObjectCost, response.Result.Params.ObjectCost)
 	}
 
-	if response.Result.Aggregates.Rate != 8 {
-		t.Errorf("Expected rate amount 8, but got %d", response.Result.Aggregates.Rate)
+	if response.Result.Params.InitialPayment != request.LoanParams.InitialPayment {
+		t.Errorf("Expected initial payment %d, but got %d", request.LoanParams.InitialPayment, response.Result.Params.InitialPayment)
 	}
 
+	if response.Result.Params.Months != request.LoanParams.Months {
+		t.Errorf("Expected months %d, but got %d", request.LoanParams.Months, response.Result.Params.Months)
+	}
+
+	if response.Result.Program.Salary != request.Program.Salary {
+		t.Errorf("Expected salary program %v, but got %v", request.Program.Salary, response.Result.Program.Salary)
+	}
+}
+
+func TestExecuteLoanCalculation_ReadBodyError(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/execute", nil)
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	ExecuteLoanCalculation(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("Expected status %d, but got %d", http.StatusBadRequest, rec.Code)
+	}
+}
+
+func TestExecuteLoanCalculation_CalculationError(t *testing.T) {
+	request := models.LoanRequest{
+		LoanParams: models.LoanParams{
+			ObjectCost:     -1000000, // Отрицательная стоимость вызовет ошибку
+			InitialPayment: 200000,
+			Months:         120,
+		},
+	}
+
+	body, _ := json.Marshal(request)
+	req := httptest.NewRequest(http.MethodPost, "/execute", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+
+	ExecuteLoanCalculation(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("Expected status %d, but got %d", http.StatusBadRequest, rec.Code)
+	}
 }

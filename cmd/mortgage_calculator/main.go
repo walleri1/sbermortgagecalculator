@@ -6,13 +6,14 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
+	"os"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
 	"sbermortgagecalculator/internal/middleware"
 	"sbermortgagecalculator/internal/routes"
+	"sbermortgagecalculator/internal/routes/paths"
 	"sbermortgagecalculator/internal/utils"
 )
 
@@ -27,28 +28,50 @@ func main() {
 		log.Fatalf("Error load config server: %v", err)
 	}
 
+	// Настройка логирования
+	if config.Logging.File != "" {
+		logFile, err := os.OpenFile(config.Logging.File, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Fatalf("Error opening log file: %v", err)
+		}
+		defer logFile.Close()
+		log.SetOutput(logFile)
+	}
+
+	// Инициализация кэша
+	paths.InitCache(config.Cache.MaxSize, config.Cache.TTL)
+	log.Printf("Кэш инициализирован с параметрами: max_size=%d, ttl=%v", config.Cache.MaxSize, config.Cache.TTL)
+
 	r := mux.NewRouter()
 
 	r.Use(middleware.LoggingMiddleware)
 
 	routes.SetupRoutes(r)
 
+	// Настройка CORS
 	corsMiddleware := handlers.CORS(
-		handlers.AllowedOrigins([]string{"*"}),
-		handlers.AllowedMethods([]string{"GET", "POST", "OPTIONS"}),
-		handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),
+		handlers.AllowedOrigins(config.CORS.AllowedOrigins),
+		handlers.AllowedMethods(config.CORS.AllowedMethods),
+		handlers.AllowedHeaders(config.CORS.AllowedHeaders),
 	)
 
-	address := fmt.Sprintf(":%d", config.Port)
-	log.Printf("The server is running on the port %s\n", address)
+	// Настройка Swagger
+	if config.Swagger.Enabled {
+		swaggerHandler := http.FileServer(http.Dir("./docs/swagger"))
+		r.PathPrefix(config.Swagger.Path).Handler(http.StripPrefix(config.Swagger.Path, swaggerHandler))
+		log.Printf("Swagger UI доступен по адресу: %s", config.Swagger.Path)
+	}
+
+	address := fmt.Sprintf(":%d", config.Server.Port)
+	log.Printf("Сервер запущен на порту %s\n", address)
 	srv := &http.Server{
 		Addr:         address,
 		Handler:      corsMiddleware(r),
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  20 * time.Second,
+		ReadTimeout:  config.Server.ReadTimeout,
+		WriteTimeout: config.Server.WriteTimeout,
+		IdleTimeout:  config.Server.IdleTimeout,
 	}
 	if err := srv.ListenAndServe(); err != nil {
-		log.Fatalf("Server startup error: %v", err)
+		log.Fatalf("Ошибка запуска сервера: %v", err)
 	}
 }

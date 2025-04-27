@@ -9,8 +9,6 @@ import (
 	"sbermortgagecalculator/internal/models"
 )
 
-var loanCache sync.Map
-
 // getLoansFromSyncMap bypasses sync.Map and returns the CachedLoan slice.
 func getLoansFromSyncMap(m *sync.Map) []models.CachedLoan {
 	var loans []models.CachedLoan

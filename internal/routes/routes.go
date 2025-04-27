@@ -11,4 +11,5 @@ import (
 func SetupRoutes(router *mux.Router) {
 	router.HandleFunc("/execute", paths.ExecuteLoanCalculation).Methods("POST")
 	router.HandleFunc("/cache", paths.GetCachedLoans).Methods("GET")
+	router.HandleFunc("/cache/{id:[0-9]+}", paths.GetCachedResult).Methods("GET")
 }

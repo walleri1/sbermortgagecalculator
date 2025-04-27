@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Build testing image
+        run: docker build -f deployments/Dockerfile.testing -t tparse .
+
+      - name: Run tests
+        run: docker run --rm -v "$(pwd):/app" tparse sh -c "cd /app; go test -v -cover ./... -json | tparse -all"
+
+      - name: Run race detector tests
+        run: docker run --rm -v "$(pwd):/app" -e CGO_ENABLED=1 tparse sh -c "cd /app; go test -race -v ./... -json | tparse -all"
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build lint image
+        run: docker build -f deployments/Dockerfile.lint -t golangci-lint .
+
+      - name: Run golangci-lint
+        run: docker run --rm -v "$(pwd):/app" golangci-lint sh -c "cd /app; golangci-lint run ./..."
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Install gosec
+        run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+
+      - name: Run gosec
+        run: gosec -quiet ./...
+
+      - name: Install trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+
+  build:
+    name: Build
+    needs: [test, lint, security-scan]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: deployments/Dockerfile.release
+          push: false
+          tags: sbermortgagecalculator:latest
+
+      - name: Scan Docker image
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'image'
+          scan-ref: 'sbermortgagecalculator:latest'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH' 
